@@ -15,9 +15,19 @@
 --even more spookiness. NextBot maybe?
 --custom scanner model lol
 --material color mode
+--doesnt work in water?
 
 --CANT DO FOR NOW
 --some way to confuse player. make map feel inverted? -> invert horizontal turning, flip blip display horizontally.
+
+--26.4.2023
+--make darkness actually dark
+ --done kinda
+ --slowly fade
+ --remove light glare if possible
+--voxel color mode doesnt work if you break the voxels
+--press esc to leave options
+
 
 #include "options.lua"
 
@@ -102,6 +112,9 @@ function init()
 	--"...32chars"
 
 	startExposure = GetEnvironmentProperty("exposure") --doesnt fully work idk why
+	local r,g,b = GetPostProcessingProperty("colorbalance")
+	startColorbalance = {r, g, b}
+	DebugPrint(r..", "..g..", "..b)
 	startAmbience = GetEnvironmentProperty("ambience")
 
 	if startExposure == 0 then
@@ -184,7 +197,8 @@ function draw(dt)
 				menuOpen = false
 
 				if not dark then
-					SetEnvironmentProperty("exposure", startExposure)
+					--SetEnvironmentProperty("exposure", startExposure)
+					SetPostProcessingProperty("colorbalance", startColorbalance[1], startColorbalance[2], startColorbalance[3])
 				else
 					blipsVisible = true
 				end
@@ -205,7 +219,8 @@ function tick()
 		menuOpen = true
 
 		if not dark then
-			SetEnvironmentProperty("exposure", 0, 0)
+			--SetEnvironmentProperty("exposure", 0, 0)
+			SetPostProcessingProperty("colorbalance", 0, 0, 0)
 		else
 			blipsVisible = false
 		end
@@ -536,7 +551,8 @@ function ConsoleStuff(dt)
 
 		if messageLine == 1 then
 			if messageStage == 2 then
-				SetEnvironmentProperty("exposure", 0, 0)
+				--SetEnvironmentProperty("exposure", 0, 0)
+				SetPostProcessingProperty("colorbalance", 0, 0, 0)
 
 				if rebootDone then
 					SetEnvironmentProperty("ambience", "indoor/cave.ogg")
@@ -566,7 +582,8 @@ function ConsoleStuff(dt)
 				end
 
 			elseif messageStage == 3 then
-				SetEnvironmentProperty("exposure", startExposure)
+				--SetEnvironmentProperty("exposure", startExposure)
+				SetPostProcessingProperty("colorbalance", startColorbalance[1], startColorbalance[2], startColorbalance[3])
 				SetEnvironmentProperty("ambience", startAmbience)
 
 			elseif messageStage == 4 then
