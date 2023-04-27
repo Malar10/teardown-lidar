@@ -166,10 +166,14 @@ function menu()
 		UiColor(1, 1, 1)
 		UiImageBox("ui/common/box-solid-6.png", 316, 16, 6, 6)
 		UiColor(0.1, 0.1, 0.1)
-		slider = UiSlider("ui/common/dot.png","x",slider, 0, 300)
+		slider, done = UiSlider("ui/common/dot.png","x",slider, 0, 300)
 
 		maxblips = ((slider / 300) * 100000)
 		SetFloat("savegame.mod.maxblips", maxblips)
+
+		if done then
+			ColorUpdatedTicks = 0
+		end
 	UiPop()
 
 	UiPush()

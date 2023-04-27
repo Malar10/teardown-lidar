@@ -19,14 +19,15 @@
 
 --CANT DO FOR NOW
 --some way to confuse player. make map feel inverted? -> invert horizontal turning, flip blip display horizontally.
+  --too laggy and janky
 
 --26.4.2023
---make darkness actually dark
- --done kinda
- --slowly fade
- --remove light glare if possible
---voxel color mode doesnt work if you break the voxels
---press esc to leave options
+--make darkness actually dark DONE
+--fix color update going crazy if you change max blip amount DONE
+--spooky man shards should have the tags as well DONE
+--voxel color mode doesnt work if you break the voxels DONE
+  --but scanning might be a little laggier
+--press esc to leave options DONE
 
 
 #include "options.lua"
@@ -89,6 +90,8 @@ function init()
 	colors = {}
 	ColorUpdatedTicks = 0
 
+	voxValues = {}
+
 	shadowBlips = 0
 	rebootDone = false
 	messageTimer = 0
@@ -103,23 +106,17 @@ function init()
 	timeSinceLastMessage = 0
 	logCleared = true
 	messages = {
-	{text = {"view_Finder_v2 disabled", "Initializing backup systems...", "Done!"}, time = {0, 0.5, 2}},
+	{text = {"disabling view_Finder_v2...", "Initializing backup systems...", "Done!"}, time = {0, 0.75, 2}},
 	{text = {"Rebooting view_Finder_v2...", "Disabling backup systems...", "Done!"}, time = {0, 2, 2.5}},
-	{text = {'[string "...tent/1167630/2831953724/main.lua"]:491: attempt to index local'.." 'material' (a nil value)", "resolving problems...", "rebooting view_Finder_v1...", "Done!"}, time = {0.2, 2, 4, 6}},
+	{text = {'[string "...tent/1167630/2831953724/main.lua"]:491: attempt to index local'.." 'material' (a nil value)", "resolving problems...", "rebooting backup systems...", "Done!"}, time = {0.2, 2, 4, 6}},
 	{text = {"Unknown presence detected nearby", "Recommended action: avoid if possible"}, time = {0, 1}}
 	}
 	--content/1167630/2831953724/main.lua    
 	--"...32chars"
 
-	startExposure = GetEnvironmentProperty("exposure") --doesnt fully work idk why
 	local r,g,b = GetPostProcessingProperty("colorbalance")
 	startColorbalance = {r, g, b}
-	DebugPrint(r..", "..g..", "..b)
 	startAmbience = GetEnvironmentProperty("ambience")
-
-	if startExposure == 0 then
-		startExposure = 1
-	end
 
 	--sounds
 	blipSound = LoadSound("warning-beep.ogg")
@@ -193,11 +190,10 @@ function draw(dt)
 			UiColor(1, 1, 1)
 			UiTranslate(UiCenter(), UiHeight() - 125)
 			UiFont("bold.ttf", 80)
-			if UiTextButton("Return", 20, 20) then
+			if UiTextButton("Return", 20, 20) or InputPressed("esc") then
 				menuOpen = false
 
 				if not dark then
-					--SetEnvironmentProperty("exposure", startExposure)
 					SetPostProcessingProperty("colorbalance", startColorbalance[1], startColorbalance[2], startColorbalance[3])
 				else
 					blipsVisible = true
@@ -219,7 +215,6 @@ function tick()
 		menuOpen = true
 
 		if not dark then
-			--SetEnvironmentProperty("exposure", 0, 0)
 			SetPostProcessingProperty("colorbalance", 0, 0, 0)
 		else
 			blipsVisible = false
@@ -286,7 +281,7 @@ function ToolStuff(dt)
 		if InputPressed("n") then
 			colorMode = colorMode + 1
 
-			if colorMode > 4 then
+			if colorMode > 5 then
 				colorMode = 1
 			end
 
@@ -298,8 +293,9 @@ function ToolStuff(dt)
 end
 
 function renderBlips(mode)
+	local limit = math.min(#blips, maxblips)
 
-	for i=1, #blips do 
+	for i=1, limit do 
 		local blip = blips[i]
 
 		local color = colors[i]
@@ -311,7 +307,7 @@ end
 function UpdateColors(mode, ColorUpdateTicks)
 
 	if #colors < maxblips then
-		for i=1, maxblips do
+		for i=#colors+1, maxblips do
 			colors[i] = {1, 1, 1}
 		end
 	end
@@ -338,8 +334,7 @@ function UpdateColors(mode, ColorUpdateTicks)
 
 		elseif mode == 2 then
 			for i=start, stop do
-				local material, r, g, b = GetShapeMaterialAtPosition(blips[i][2], blips[i][1])
-				colors[i] = {r, g, b}
+				colors[i] = {voxValues[i][2], voxValues[i][3], voxValues[i][4]}
 			end
 
 		elseif mode == 3 then
@@ -358,11 +353,20 @@ function UpdateColors(mode, ColorUpdateTicks)
 					colors[i] = {0, 0, 1}
 				end
 			end
+		elseif mode == 5 then
+			for i=start, stop do
+				local broke = GetShapeMaterialAtPosition(blips[i][2], blips[i][1]) == ""
+				if broke then
+					colors[i] = {1, 0, 0}
+				else
+					colors[i] = {0, 1, 0}
+				end
+			end
 		end
 
 		ColorUpdatedTicks = ColorUpdatedTicks + 1
 
-	elseif colorMode == 3 then --keep updating if colorMode 3
+	elseif colorMode == 3 or colorMode == 5 then --keep updating
 		ColorUpdatedTicks = 0
 	end
 end
@@ -378,6 +382,8 @@ function scanPoint(cam, dir, maxdist) --could use more optimization, but its not
 		end
 
 		--local color = {1, 1, 1}
+		local material, r, g, b = GetShapeMaterialAtPosition(shape, hitPos)
+		voxValues[lastblip + 1] = {material, r, g, b}
 
 		if colorMode == 1 then
 			if customcolor then
@@ -386,7 +392,8 @@ function scanPoint(cam, dir, maxdist) --could use more optimization, but its not
 				colors[lastblip + 1] = {1, 1, 1}
 			end
 		elseif colorMode == 2 then
-			local material, r, g, b = GetShapeMaterialAtPosition(shape, hitPos)
+			--local material, r, g, b = GetShapeMaterialAtPosition(shape, hitPos)
+			--DebugPrint(material)
 			colors[lastblip + 1] = {r, g, b}
 		elseif colorMode == 3 then
 			local dist = VecLength(VecSub(hitPos, cam.pos))
@@ -398,6 +405,13 @@ function scanPoint(cam, dir, maxdist) --could use more optimization, but its not
 				colors[lastblip + 1] = {0, 1, 0}
 			else
 				colors[lastblip + 1] = {0, 0, 1}
+			end
+		elseif colorMode == 5 then
+			local broke = GetShapeMaterialAtPosition(shape, hitPos) == ""
+			if broke then
+				colors[lastblip + 1] = {1, 0, 0}
+			else
+				colors[lastblip + 1] = {0, 1, 0}
 			end
 		end
 
@@ -550,8 +564,7 @@ function ConsoleStuff(dt)
 
 
 		if messageLine == 1 then
-			if messageStage == 2 then
-				--SetEnvironmentProperty("exposure", 0, 0)
+			if messageStage == 3 then
 				SetPostProcessingProperty("colorbalance", 0, 0, 0)
 
 				if rebootDone then
@@ -582,7 +595,6 @@ function ConsoleStuff(dt)
 				end
 
 			elseif messageStage == 3 then
-				--SetEnvironmentProperty("exposure", startExposure)
 				SetPostProcessingProperty("colorbalance", startColorbalance[1], startColorbalance[2], startColorbalance[3])
 				SetEnvironmentProperty("ambience", startAmbience)
 
