@@ -1,0 +1,18 @@
+<prefab version="1.1.0">
+	<group name="instance=MOD/spookyman.xml" pos="0.0 0.0 0.0" rot="0.0 0.0 0.0">
+		<body tags="spookyman" pos="0.0 -0.3 0.05" rot="0.0 0.0 0.0" dynamic="false">
+			<vox tags="error" pos="0.05 2.9 0.0" file="MOD/walker.vox" object="head"/>
+			<vox tags="error" pos="0.0 2.1 0.1" file="MOD/walker.vox" object="torso"/>
+			<vox tags="error" pos="0.0 1.7 0.0" file="MOD/walker.vox" object="pelvis"/>
+			<vox tags="error" pos="0.2 1.5 0.0" rot="0.0 -90.0 0.0" file="MOD/walker.vox" object="rightup1"/>
+			<vox tags="error" pos="-0.1 1.5 0.0" rot="0.0 90.0 0.0" file="MOD/walker.vox" object="rightup1"/>
+			<vox tags="error" pos="0.4 2.4 0.0" file="MOD/walker.vox" object="rightup"/>
+			<vox tags="error" pos="-0.3 2.4 0.0" file="MOD/walker.vox" object="rightup"/>
+			<vox tags="error" pos="0.45 0.9 0.0" rot="0.0 180.0 0.0" file="MOD/walker.vox" object="rightdown"/>
+			<vox tags="error" pos="0.2 0.3 0.0" file="MOD/walker.vox" object="rightdown"/>
+			<vox tags="error" pos="-0.1 0.2 0.0" rot="0.0 -90.0 0.0" file="MOD/walker.vox" object="rightdown"/>
+			<vox tags="error" pos="-0.35 0.9 0.0" file="MOD/walker.vox" object="rightdown"/>
+		</body>
+	</group>
+</prefab>
+
