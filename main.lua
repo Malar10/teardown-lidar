@@ -12,9 +12,9 @@
 
 --future plans maybe:
 --deployable scanner tower thingy
---even more spookiness. NextBot maybe?
+--even more spookiness
 --custom scanner model lol
---material color mode
+
 --doesnt work in water?
 
 --CANT DO FOR NOW
@@ -28,6 +28,8 @@
 --voxel color mode doesnt work if you break the voxels DONE
   --but scanning might be a little laggier
 --press esc to leave options DONE
+--material color mode
+--more spookiness
 
 
 #include "options.lua"
@@ -99,6 +101,8 @@ function init()
 	messageLine = 0
 	spookyMan = 0
 
+	groovin = false
+
 	RegisterTool("lidargun", "LIDAR", "MOD/gun.vox", 2)
 	SetBool("game.tool.lidargun.enabled", true)
 
@@ -126,6 +130,7 @@ function init()
 	spookyBuzz = LoadSound("light/fluorescent0.ogg")
 	click = LoadSound("clickdown.ogg")
 	boom = LoadSound("explosion/l0.ogg")
+	glassbreak = LoadSound("glass/break-l0.ogg")
 end
 
 function draw(dt)
@@ -201,6 +206,13 @@ function draw(dt)
 			end
 		UiPop()
 	end
+
+	if InputPressed("h") then
+		PlaySound(uhhsound, cam.pos, 1)
+	end
+
+	
+
 
 	--DebugWatch("blips", #blips)
 	--DebugWatch("dt", dt)
@@ -355,7 +367,7 @@ function UpdateColors(mode, ColorUpdateTicks)
 			end
 		elseif mode == 5 then
 			for i=start, stop do
-				local broke = GetShapeMaterialAtPosition(blips[i][2], blips[i][1]) == ""
+				local broke = GetShapeMaterialAtPosition(blips[i][2], blips[i][1]) ~= voxValues[i][1]
 				if broke then
 					colors[i] = {1, 0, 0}
 				else
@@ -392,8 +404,6 @@ function scanPoint(cam, dir, maxdist) --could use more optimization, but its not
 				colors[lastblip + 1] = {1, 1, 1}
 			end
 		elseif colorMode == 2 then
-			--local material, r, g, b = GetShapeMaterialAtPosition(shape, hitPos)
-			--DebugPrint(material)
 			colors[lastblip + 1] = {r, g, b}
 		elseif colorMode == 3 then
 			local dist = VecLength(VecSub(hitPos, cam.pos))
@@ -407,12 +417,7 @@ function scanPoint(cam, dir, maxdist) --could use more optimization, but its not
 				colors[lastblip + 1] = {0, 0, 1}
 			end
 		elseif colorMode == 5 then
-			local broke = GetShapeMaterialAtPosition(shape, hitPos) == ""
-			if broke then
-				colors[lastblip + 1] = {1, 0, 0}
-			else
-				colors[lastblip + 1] = {0, 1, 0}
-			end
+			colors[lastblip + 1] = {0, 1, 0}
 		end
 
 		if not HasTag(shape, "error") then
@@ -464,10 +469,49 @@ function RandomCircle(radius, pPerT, cam, maxdist)
 	end
 end
 
+
 function SpookyStuff()
 	--if InputPressed("o") then
 	--	SpawnSpookyMan()
 	--end
+	
+	--if GetPlayerHealth() == 1 then 
+	--	dead = false 
+	--end
+
+	local spookyMan = FindBody("spookyman")
+	if spookyman ~= 0 then
+		if VecLength(VecSub(GetPlayerTransform().pos, GetBodyTransform(spookyMan).pos)) < 2 then -- do damage if close to player
+			SetPlayerHealth(GetPlayerHealth() - 0.005)
+			
+			if GetPlayerHealth() <= 0 then
+				PlaySound(glassbreak, cam.pos, 10)
+			end
+		end
+
+		if GetPlayerHealth() <= 0 then
+			Delete(spookyMan)
+			spookyMan = 0
+		end
+	end
+
+	health = GetPlayerHealth()
+	if rebootDone and health < 0.9 then
+		
+		local intensity = 66.6 / math.max(health, 0.1)
+		--DebugPrint(intensity)
+		
+
+		for i=1, math.random(1, intensity) do
+			local randomoffset = Vec(((math.random(1, 200) - 100) * intensity) / 10000, ((math.random(1, 200) - 100) * intensity) / 10000, ((math.random(1, 200) - 100) * intensity) / 10000)
+
+			local j = math.random(1, #blips)
+			blips[j][1] = VecAdd(blips[j][1], randomoffset)
+			colors[j] = ColorThing(math.random(1, 359))
+
+			PlaySound(spark, blips[j][1], intensity / 666)
+		end
+	end
 
 	if shadowBlips > shadowBlipLimit then
 		if not rebootDone then
