@@ -4,23 +4,6 @@
 --continue at your own peril
 ---------------------------------
 
---higher maxblips DONE
---different colors based on distance from player DONE
---whole-screen snapshots scale with maxblips DONE
---dynamic color mode? (dynamic stuff different color from static stuff) DONE
---different colors for colorMode 1 DONE
-
---future plans maybe:
---deployable scanner tower thingy
---even more spookiness
---custom scanner model lol
-
---doesnt work in water?
-
---CANT DO FOR NOW
---some way to confuse player. make map feel inverted? -> invert horizontal turning, flip blip display horizontally.
-  --too laggy and janky
-
 --26.4.2023
 --make darkness actually dark DONE
 --fix color update going crazy if you change max blip amount DONE
@@ -29,7 +12,9 @@
   --but scanning might be a little laggier
 --press esc to leave options DONE
 --material color mode
---more spookiness
+--color mode that shows if things have moved
+--a lot more spookiness
+--made code a little less messy i hope
 
 
 #include "options.lua"
@@ -100,8 +85,7 @@ function init()
 	messageStage = 0
 	messageLine = 0
 	spookyMan = 0
-
-	groovin = false
+	angry = false
 
 	RegisterTool("lidargun", "LIDAR", "MOD/gun.vox", 2)
 	SetBool("game.tool.lidargun.enabled", true)
@@ -113,7 +97,9 @@ function init()
 	{text = {"disabling view_Finder_v2...", "Initializing backup systems...", "Done!"}, time = {0, 0.75, 2}},
 	{text = {"Rebooting view_Finder_v2...", "Disabling backup systems...", "Done!"}, time = {0, 2, 2.5}},
 	{text = {'[string "...tent/1167630/2831953724/main.lua"]:491: attempt to index local'.." 'material' (a nil value)", "resolving problems...", "rebooting backup systems...", "Done!"}, time = {0.2, 2, 4, 6}},
-	{text = {"Unknown presence detected nearby", "Recommended action: avoid if possible"}, time = {0, 1}}
+	{text = {"Unusual energy readings detected nearby", "Recommended actions:", "-stay vigilant", "-avoid if possible", "-do not inter ct w th t e      s  ", ""}, time = {0, 1, 1.6, 2.2, 3, 3.6}},
+	{text = {"Systems failing", "Error", "{Hyperlink Blocked}"}, time = {0, 0, 0}},
+	{text = {"you can't run", "they are angry", "you did this to yourself"}, time = {0, 0, 0}}
 	}
 	--content/1167630/2831953724/main.lua    
 	--"...32chars"
@@ -137,24 +123,48 @@ function draw(dt)
 
 	cam = GetPlayerCameraTransform()
 
-	if InputPressed("g") and not consoleActive then --make dark
+	if InputPressed("g") and not consoleActive then --toggle darkness
+		PlaySound(click)
 
-		if dark then
-			dark = false
+		if not angry then
+			if dark then
+				dark = false
+				messageLine = 2		
+			else
+				dark = true
+				messageLine = 1
+			end
 
 			messageStage = 1
-			messageLine = 2
-			messageTimer = 0
-			consoleActive = true			
-
-		else
-			dark = true
-
-			messageStage = 1
-			messageLine = 1
 			messageTimer = 0
 			consoleActive = true
-			
+
+		else
+
+			--choose a bunch of random messages and cut them at random parts
+
+			local stages = math.random(1, 5)
+			local texts = {}
+			local times = {}
+			for i=1, stages do
+				local j = math.random(1, #messages)
+				local h = math.random(1, #messages[j].text)
+				local randommessage = messages[j].text[h]
+
+				local s = math.min(math.random(1, #randommessage), 6)
+				local e = math.random(s, #randommessage)
+				table.insert(texts, string.sub(randommessage, s, e))
+
+				table.insert(times, i - 1)
+			end
+
+			table.insert(messages, {text = texts, time = times})
+
+			messageStage = 1
+			messageLine = #messages
+			messageTimer = 0
+			consoleActive = true
+
 		end
 	end
 
@@ -206,12 +216,6 @@ function draw(dt)
 			end
 		UiPop()
 	end
-
-	if InputPressed("h") then
-		PlaySound(uhhsound, cam.pos, 1)
-	end
-
-	
 
 
 	--DebugWatch("blips", #blips)
@@ -471,64 +475,67 @@ end
 
 
 function SpookyStuff()
-	--if InputPressed("o") then
-	--	SpawnSpookyMan()
-	--end
-	
-	--if GetPlayerHealth() == 1 then 
-	--	dead = false 
-	--end
 
-	local spookyMan = FindBody("spookyman")
-	if spookyman ~= 0 then
-		if VecLength(VecSub(GetPlayerTransform().pos, GetBodyTransform(spookyMan).pos)) < 2 then -- do damage if close to player
+	local spookyMen = FindBodies("spookyman")
+	if #spookyMen ~= 0 then
+
+		--stuff when close to spookyman
+		local smallestdist = 10
+		for i, spookyMan in ipairs(spookyMen) do
+			local distfromspookyman = VecLength(VecSub(GetPlayerTransform().pos, GetBodyTransform(spookyMan).pos))
+			if distfromspookyman < smallestdist then
+				smallestdist = distfromspookyman
+			end
+		end
+
+		if smallestdist < 2 then -- do damage if close to player
 			SetPlayerHealth(GetPlayerHealth() - 0.005)
+
+			glitchBlips(66.6 / math.max(GetPlayerHealth(), 0.05))
 			
 			if GetPlayerHealth() <= 0 then
 				PlaySound(glassbreak, cam.pos, 10)
 			end
 		end
 
+
 		if GetPlayerHealth() <= 0 then
-			Delete(spookyMan)
-			spookyMan = 0
-		end
-	end
+			angry = false
+			spookyManChance = 10
 
-	health = GetPlayerHealth()
-	if rebootDone and health < 0.9 then
-		
-		local intensity = 66.6 / math.max(health, 0.1)
-		--DebugPrint(intensity)
-		
-
-		for i=1, math.random(1, intensity) do
-			local randomoffset = Vec(((math.random(1, 200) - 100) * intensity) / 10000, ((math.random(1, 200) - 100) * intensity) / 10000, ((math.random(1, 200) - 100) * intensity) / 10000)
-
-			local j = math.random(1, #blips)
-			blips[j][1] = VecAdd(blips[j][1], randomoffset)
-			colors[j] = ColorThing(math.random(1, 359))
-
-			PlaySound(spark, blips[j][1], intensity / 666)
-		end
-	end
-
-	if shadowBlips > shadowBlipLimit then
-		if not rebootDone then
-			messageStage = 1
-			messageLine = 3
-			messageTimer = 0
-			consoleActive = true
-			PlaySound(turnOff, cam.pos, 5)
-
-			rebootDone = true
-			spookyManChance = math.floor(spookyManChance / 2) --make it twice as likely to show up
-			spookyManDist = spookyManDist - 5 
+			for i, spookyMan in ipairs(spookyMen) do
+				Delete(spookyMan)
+			end
 		end
 
-		shadowBlips = 0
-		Delete(spookyMan)
-		spookyMan = 0
+		for i, spookyMan in ipairs(spookyMen) do
+			if IsBodyBroken(spookyMan) then
+				Delete(spookyMan)
+				angry = true
+				spookyManChance = 1
+			end
+		end
+
+		if shadowBlips > shadowBlipLimit and not angry then
+			if not rebootDone then
+				messageStage = 1
+				messageLine = 3
+				messageTimer = 0
+				consoleActive = true
+				PlaySound(turnOff, cam.pos, 5)
+	
+				rebootDone = true
+				spookyManChance = math.floor(spookyManChance / 2) --make it twice as likely to show up
+				spookyManDist = spookyManDist - 5 
+			end
+	
+			
+			shadowBlips = 0
+			local spookyMan = FindBody("spookyman")
+			if spookyMan ~= 0 then
+				Delete(spookyMan)
+			end
+		end
 	end
 end
 
@@ -548,35 +555,38 @@ function SpawnSpookyMan()
 
 		if dist > buffer then
 			
+			--calculate position
 			entityDist = dist - buffer
+			local entityPos = VecAdd(playerTrans.pos, VecScale(fwd, entityDist))
+			local entityRot = QuatLookAt(entityPos, playerTrans.pos)
+			spookyTrans = Transform(entityPos, entityRot)
+			
+			--delete old spookyman
+			local spookyMan = FindBody("spookyman")
+			if spookyMan ~= 0 and not angry then
+				Delete(spookyMan)
+			end
 
-			entityPos = VecAdd(playerTrans.pos, VecScale(fwd, entityDist))
-			entityRot = QuatLookAt(entityPos, playerTrans.pos)
-		end		
+			--spawn new spookyman
+			if math.random(1, 100) ~= 1 or angry then
+				Spawn("MOD/spookyman.xml", spookyTrans, true)
+			else
+				Spawn("MOD/what.xml", spookyTrans, true)--what could this be
+				PlaySound(boom)
+			end
 
-		if spookyMan ~= 0 then
-			Delete(spookyMan)
+			--play sounds
+			if rebootDone then
+				PlaySound(spookyBuzz, spookyTrans.pos, 10)
+				PlaySound(spookyBuzz, spookyTrans.pos, 10)
+				PlaySound(spookyBuzz, spookyTrans.pos, 10)
+				PlaySound(spookyBuzz, spookyTrans.pos, 10)
+				PlaySound(spookyBuzz, spookyTrans.pos, 10)
+			end
+
+			--increase blip limit
+			shadowBlipLimit = math.min(shadowBlipLimit + 50, 500)
 		end
-
-		if math.random(1, 100) ~= 1 then
-			Spawn("MOD/spookyman.xml", Transform(entityPos, entityRot), true)
-		else
-			Spawn("MOD/what.xml", Transform(entityPos, entityRot), true)--what could this be
-			PlaySound(boom)
-		end
-
-		spookyMan = FindBody("spookyman")
-		spookyTrans = GetBodyTransform(spookyMan)
-
-		if rebootDone then
-			PlaySound(spookyBuzz, spookyTrans.pos, 10)
-			PlaySound(spookyBuzz, spookyTrans.pos, 10)
-			PlaySound(spookyBuzz, spookyTrans.pos, 10)
-			PlaySound(spookyBuzz, spookyTrans.pos, 10)
-			PlaySound(spookyBuzz, spookyTrans.pos, 10)
-		end
-
-		shadowBlipLimit = math.min(shadowBlipLimit + 50, 500)
 	end
 end
 
@@ -619,10 +629,9 @@ function ConsoleStuff(dt)
 				blipsVisible = true
 				PlaySound(turnOn)
 
-				if spookyMan ~= 0 then
-					Spawn("MOD/spookyman.xml", Transform(entityPos), true)
-					spookyMan = FindBody("spookyman")
-					spookyTrans = GetBodyTransform(spookyMan)
+				local spookyMan = FindBody("spookyman")
+				if spookyMan == 0 then
+					Spawn("MOD/spookyman.xml", spookyTrans, true)
 				end
 
 				if not firstEnableDone then
@@ -633,8 +642,9 @@ function ConsoleStuff(dt)
 
 		elseif messageLine == 2 then
 			if messageStage == 2 then
+				
+				local spookyMan = FindBody("spookyman")
 				if spookyMan ~= 0 then
-					spookyTrans = GetBodyTransform(spookyMan)
 					Delete(spookyMan)
 				end
 
@@ -677,6 +687,18 @@ function ConsoleStuff(dt)
 
 	timeSinceLastMessage = timeSinceLastMessage + dt
 	messageTimer = messageTimer + dt
+end
+
+function glitchBlips(intensity)
+	if #blips > 0 then
+		for i=1, math.random(1, intensity) do
+			local randomoffset = Vec(((math.random(1, 200) - 100) * intensity) / 10000, ((math.random(1, 200) - 100) * intensity) / 10000, ((math.random(1, 200) - 100) * intensity) / 10000)
+			local j = math.random(1, #blips)
+			blips[j][1] = VecAdd(blips[j][1], randomoffset)
+			colors[j] = ColorThing(math.random(1, 359))
+			PlaySound(spark, blips[j][1], intensity / 666)
+		end
+	end
 end
 
 function ColorThing(H)
