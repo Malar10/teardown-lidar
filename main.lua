@@ -175,9 +175,9 @@ function draw(dt)
 
 	ToolStuff(dt)
 
-	UpdateColors(colorMode, updaterate)
-
 	if blipsVisible then
+
+		UpdateColors(colorMode, updaterate)
 
 		if recording then
 			recordTimer = recordTimer + dt
