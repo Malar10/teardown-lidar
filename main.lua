@@ -4,17 +4,20 @@
 --continue at your own peril
 ---------------------------------
 
---26.4.2023
---make darkness actually dark DONE
---fix color update going crazy if you change max blip amount DONE
---spooky man shards should have the tags as well DONE
---voxel color mode doesnt work if you break the voxels DONE
+--Big june update
+--make darkness actually dark
+--fix color update going crazy if you change max blip amount
+--spooky man shards should have the tags as well
+--voxel color mode doesnt work if you break the voxels
   --but scanning might be a little laggier
---press esc to leave options DONE
---material color mode
+--press esc to leave options
 --color mode that shows if things have moved
 --a lot more spookiness
 --made code a little less messy i hope
+
+--smol june update
+--stopped color update happening even if not in dark mode
+--stopped unnecessarily filling color array with empty values when increasing blip limit
 
 
 #include "options.lua"
@@ -58,10 +61,12 @@ function init()
 		spookiness = true
 	end
 
+	--options stuff dont delete
 	slider = (maxblips / 100000) * 300
 	updateSlider = (updaterate / 50) * 300
 	hueSlider = (hue / 359) * 359
 	lasthue = hue
+	-----------------------------
 	
 	blips = {} 
 	lastblip = 0
@@ -126,7 +131,7 @@ function draw(dt)
 	if InputPressed("g") and not consoleActive then --toggle darkness
 		PlaySound(click)
 
-		if not angry then
+		if not angry or (spookiness == false) then
 			if dark then
 				dark = false
 				messageLine = 2		
@@ -322,12 +327,6 @@ end
 
 function UpdateColors(mode, ColorUpdateTicks)
 
-	if #colors < maxblips then
-		for i=#colors+1, maxblips do
-			colors[i] = {1, 1, 1}
-		end
-	end
-
 	if ColorUpdatedTicks < ColorUpdateTicks then
 		start = math.floor(((ColorUpdatedTicks)/ColorUpdateTicks) * maxblips) + 1
 		stop = math.min(((math.floor(ColorUpdatedTicks+1)/ColorUpdateTicks) * maxblips), #blips)
@@ -499,7 +498,7 @@ function SpookyStuff()
 		end
 
 
-		if GetPlayerHealth() <= 0 then
+		if GetPlayerHealth() <= 0 or spookiness == false then
 			angry = false
 			spookyManChance = 10
 
