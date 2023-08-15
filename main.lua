@@ -20,6 +20,13 @@
 --stopped unnecessarily filling color array with empty values when increasing blip limit
 
 
+--august update
+--added a warning for mod conflicts
+--fixed custom color missing colors
+--fixed glitchy text actually breaking sometimes
+--added text when you      a spooky man
+
+
 #include "options.lua"
 
 function init()
@@ -64,7 +71,7 @@ function init()
 	--options stuff dont delete
 	slider = (maxblips / 100000) * 300
 	updateSlider = (updaterate / 50) * 300
-	hueSlider = (hue / 359) * 359
+	hueSlider = (hue / 300) * 359
 	lasthue = hue
 	-----------------------------
 	
@@ -104,7 +111,9 @@ function init()
 	{text = {'[string "...tent/1167630/2831953724/main.lua"]:491: attempt to index local'.." 'material' (a nil value)", "resolving problems...", "rebooting backup systems...", "Done!"}, time = {0.2, 2, 4, 6}},
 	{text = {"Unusual energy readings detected nearby", "Recommended actions:", "-stay vigilant", "-avoid if possible", "-do not inter ct w th t e      s  ", ""}, time = {0, 1, 1.6, 2.2, 3, 3.6}},
 	{text = {"Systems failing", "Error", "{Hyperlink Blocked}"}, time = {0, 0, 0}},
-	{text = {"you can't run", "they are angry", "you did this to yourself"}, time = {0, 0, 0}}
+	{text = {"you can't run", "they are angry", "you did this to yourself"}, time = {0, 0, 0}},
+	{text = {"", "========LIDAR WARNING========", "possible mod conflict detected", "disable any mods that may affect the color balance settings", "", "known conflicting mods:", "-Blink (mod id: 2875792342)", "", "sorry for the inconvenience"}, time = {0, 0, 1, 2, 3, 3, 3, 3, 4}},
+	{text = {"you should not have done that"}, time = {1}}
 	}
 	--content/1167630/2831953724/main.lua    
 	--"...32chars"
@@ -112,6 +121,9 @@ function init()
 	local r,g,b = GetPostProcessingProperty("colorbalance")
 	startColorbalance = {r, g, b}
 	startAmbience = GetEnvironmentProperty("ambience")
+
+	dontclear = false
+	WarningDone = false
 
 	--sounds
 	blipSound = LoadSound("warning-beep.ogg")
@@ -128,15 +140,15 @@ function draw(dt)
 
 	cam = GetPlayerCameraTransform()
 
+	
+
 	if InputPressed("g") and not consoleActive then --toggle darkness
 		PlaySound(click)
 
 		if not angry or (spookiness == false) then
 			if dark then
-				dark = false
 				messageLine = 2		
 			else
-				dark = true
 				messageLine = 1
 			end
 
@@ -156,9 +168,13 @@ function draw(dt)
 				local h = math.random(1, #messages[j].text)
 				local randommessage = messages[j].text[h]
 
-				local s = math.min(math.random(1, #randommessage), 6)
-				local e = math.random(s, #randommessage)
-				table.insert(texts, string.sub(randommessage, s, e))
+				if string.len(randommessage) > 1 then
+					local s = math.min(math.random(1, #randommessage), 6)
+					local e = math.random(s, #randommessage)
+					table.insert(texts, string.sub(randommessage, s, e))
+				else
+					table.insert(texts, randommessage)
+				end
 
 				table.insert(times, i - 1)
 			end
@@ -172,6 +188,25 @@ function draw(dt)
 
 		end
 	end
+
+	if dark and not IsActuallyDark() then
+		dark = false
+
+		if not WarningDone then
+			WarningDone = true
+
+			for i=1, 20 do
+				DebugPrint("")
+			end
+
+			messageLine = 7 --send warning message
+			messageStage = 1
+			messageTimer = 0
+			consoleActive = true
+
+			dontclear = true
+		end
+    end
 
 	ToolStuff(dt)
 
@@ -509,6 +544,12 @@ function SpookyStuff()
 
 		for i, spookyMan in ipairs(spookyMen) do
 			if IsBodyBroken(spookyMan) then
+
+				messageLine = 8
+				messageStage = 1
+				messageTimer = 0
+				consoleActive = true
+
 				Delete(spookyMan)
 				angry = true
 				spookyManChance = 1
@@ -596,7 +637,9 @@ function Console(i, message, timer)
 
 	if timer >= line.time[message] then
 
-		DebugPrint(line.text[message])
+		if dontclear == false or i == 7 then
+			DebugPrint(line.text[message])
+		end
 
 		if message + 1 > #line.text then
 			active = false
@@ -618,6 +661,7 @@ function ConsoleStuff(dt)
 
 		if messageLine == 1 then
 			if messageStage == 3 then
+				dark = true
 				SetPostProcessingProperty("colorbalance", 0, 0, 0)
 
 				if rebootDone then
@@ -648,6 +692,7 @@ function ConsoleStuff(dt)
 				end
 
 			elseif messageStage == 3 then
+				dark = false
 				SetPostProcessingProperty("colorbalance", startColorbalance[1], startColorbalance[2], startColorbalance[3])
 				SetEnvironmentProperty("ambience", startAmbience)
 
@@ -676,7 +721,7 @@ function ConsoleStuff(dt)
 		end
 	end
 
-	if not logCleared and timeSinceLastMessage > 7 then
+	if not logCleared and timeSinceLastMessage > 7 and dontclear == false then
 		for i=1, 20 do
 			DebugPrint("")
 		end
@@ -722,4 +767,12 @@ function ColorThing(H)
 	end
 
 	return RGB
+end
+
+function IsActuallyDark()
+	local r, g, b = GetPostProcessingProperty("colorbalance")
+	if r ~= 0 or g ~= 0 or b ~= 0 then
+		return false
+	end
+	return true
 end

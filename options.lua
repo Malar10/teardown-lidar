@@ -31,7 +31,7 @@ function init()
 
 	slider = (maxblips / 100000) * 300
 	updateSlider = (updaterate / 50) * 300
-	hueSlider = (hue / 359) * 300
+	hueSlider = (hue / 300) * 359
 	lasthue = hue
 	ColorUpdatedTicks = 0
 end
@@ -124,7 +124,7 @@ function menu()
 			UiColor(0.1, 0.1, 0.1)
 			hueSlider = UiSlider("ui/common/dot.png","x",hueSlider, 0, 300)
 
-			hue = (hueSlider / 359) * 300
+			hue = (hueSlider / 300) * 359
 			if hue ~= lasthue then
 				ColorUpdatedTicks = 0
 			end
@@ -209,8 +209,8 @@ function menu()
 			
 			ColorUpdatedTicks = 0
 			hue = 0
-			lasthue = hue
-			hueSlider = (hue / 359) * 300
+			lasthue = 0
+			hueSlider = 0
 			customcolor = false
 
 			SetFloat("savegame.mod.maxblips", maxblips)
