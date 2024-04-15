@@ -120,7 +120,11 @@ function init()
 
 	local r,g,b = GetPostProcessingProperty("colorbalance")
 	startColorbalance = {r, g, b}
-	startAmbience = GetEnvironmentProperty("ambience")
+
+	ambienceAvailable = not HasVersion("1.5.4")
+	if ambienceAvailable then
+		startAmbience = GetEnvironmentProperty("ambience")
+	end
 
 	dontclear = false
 	WarningDone = false
@@ -664,7 +668,7 @@ function ConsoleStuff(dt)
 				dark = true
 				SetPostProcessingProperty("colorbalance", 0, 0, 0)
 
-				if rebootDone then
+				if rebootDone and ambienceAvailable then
 					SetEnvironmentProperty("ambience", "indoor/cave.ogg")
 				end
 
@@ -694,7 +698,9 @@ function ConsoleStuff(dt)
 			elseif messageStage == 3 then
 				dark = false
 				SetPostProcessingProperty("colorbalance", startColorbalance[1], startColorbalance[2], startColorbalance[3])
-				SetEnvironmentProperty("ambience", startAmbience)
+				if ambienceAvailable then
+					SetEnvironmentProperty("ambience", startAmbience)
+				end
 
 			elseif messageStage == 4 then
 				blipsVisible = false
@@ -705,11 +711,15 @@ function ConsoleStuff(dt)
 
 			if messageStage == 2 then
 				blipsVisible = false
-				SetEnvironmentProperty("ambience", "")
+				if ambienceAvailable then
+					SetEnvironmentProperty("ambience", "")
+				end
 			
 			elseif messageStage == 5 then
 				blipsVisible = true
-				SetEnvironmentProperty("ambience", "indoor/cave.ogg")
+				if ambienceAvailable then
+					SetEnvironmentProperty("ambience", "indoor/cave.ogg")
+				end
 				PlaySound(turnOn, cam.pos, 5)
 				
 				PlaySound(spookyBuzz, spookyTrans.pos, 10)
