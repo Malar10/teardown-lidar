@@ -112,7 +112,7 @@ function init()
 	{text = {"Unusual energy readings detected nearby", "Recommended actions:", "-stay vigilant", "-avoid if possible", "-do not inter ct w th t e      s  ", ""}, time = {0, 1, 1.6, 2.2, 3, 3.6}},
 	{text = {"Systems failing", "Error", "{Hyperlink Blocked}"}, time = {0, 0, 0}},
 	{text = {"you can't run", "they are angry", "you did this to yourself"}, time = {0, 0, 0}},
-	{text = {"", "========LIDAR WARNING========", "possible mod conflict detected", "disable any mods that may affect the color balance settings", "", "known conflicting mods:", "-Blink (mod id: 2875792342)", "", "sorry for the inconvenience"}, time = {0, 0, 1, 2, 3, 3, 3, 3, 4}},
+	{text = {"", "========LIDAR WARNING========", "possible mod conflict detected", "disable any mods that may affect the color balance settings", "", "known conflicting mods:", "(problem may be caused by mods not on this list)", "-Blink (mod id: 2875792342)", "-Melt (mod id: 3005988296)", "-Ordinance [FD] (mod id: 2494170635) (when in tactical mode)", "-[TABS] Vehicle Framework (mod id: 3148138736) (when using night vision or getting supressed)", "", "sorry for the inconvenience"}, time = {0, 0, 1, 2, 3, 3, 3, 4, 4, 4, 4, 5, 5}},
 	{text = {"you should not have done that"}, time = {1}}
 	}
 	--content/1167630/2831953724/main.lua    

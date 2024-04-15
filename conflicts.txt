@@ -1,0 +1,14 @@
+confirmed conflicts:
+
+Ordnance [FD]
+2494170635\tactical.lua: When in tactical mode
+
+Blink: Ultimate Teleportation
+2875792342\blinktool.lua: all the time
+
+Melt
+3005988296\scripts\tool.lua: all the time
+
+[TABS] Vehicle Framework
+3148138736\main.lua: Night vision
+3148138736\TABS\scripts\player_movement.lua: player suppression
